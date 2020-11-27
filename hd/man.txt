@@ -1,0 +1,36 @@
+#创建50M硬盘
+dd if=/dev/zero of=hd.img bs=516096c count=100
+#初始化硬盘
+fdisk -u -C100 -S63 -H16 hd.img
+#格式化文件系统==========================
+#挂载硬盘镜像
+losetup -o 32256 /dev/loop0 hd.img
+#格式化为ext3
+mkfs.ext3 /dev/loop0
+#========================================
+#读写硬盘================================
+#先挂载文件系统
+mount -t ext3 /dev/loop0 /mnt
+#建立boot和grub目录?
+mkdir -p /mnt/boot/grub
+#将当前系统上的grub程序文件复制到hd.img
+cp /boot/grub/stage1 /boot/grub/stage2 /boot/grub/e2fs_stage1_5 /boot/grub/grub.conf /mnt/boot/grub/
+ln -s /mnt/boot/grub/grub.conf /mnt/boot/grub/menu.lst
+#修改/mnt/boot/grub/grub.conf文件
+title jadeshu kernel(1.0.0)
+root(hd0,0)
+kernel /kernel
+#========================================
+#卸载文件系统
+umount /mnt/
+#卸载硬盘镜像
+losetup -d /dev/loop0
+#最终安装grub
+grub --device-map=/dev/null
+grub> device (hd0) hd.img
+grub> geometry (hd0) 100 16 63
+grub> root (hd0,0)
+grub> setup (hd0)
+grub> quit
+
+
